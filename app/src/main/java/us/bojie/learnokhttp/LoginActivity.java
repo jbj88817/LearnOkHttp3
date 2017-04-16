@@ -18,6 +18,7 @@ import butterknife.OnClick;
 import okhttp3.Call;
 import okhttp3.Callback;
 import okhttp3.FormBody;
+import okhttp3.MediaType;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.RequestBody;
@@ -51,8 +52,72 @@ public class LoginActivity extends AppCompatActivity {
         String userName = mEtUsername.getText().toString().trim();
         String passWord = mEtPassword.getText().toString().trim();
 
-        loginWithForm(userName, passWord);
+//        loginWithForm(userName, passWord);
+
+        loginWithJSON(userName, passWord);
     }
+
+    private void loginWithJSON(String userName, String passWord) {
+
+        String url = Config.API.BASE_URL + "login/json";
+
+        JSONObject jsonObject = new JSONObject();
+
+        try {
+            jsonObject.put("username", userName);
+            jsonObject.put("password", passWord);
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+
+        String jsonParams = jsonObject.toString();
+        Log.d(TAG, "loginWithJSON: " + jsonParams);
+
+        RequestBody body = RequestBody
+                .create(MediaType.parse("application/json;charset=utf-8"), jsonParams);
+
+        Request request = new Request.Builder()
+                .url(url)
+                .post(body)
+                .build();
+
+
+        mOkHttpClient.newCall(request).enqueue(new Callback() {
+            @Override
+            public void onFailure(Call call, IOException e) {
+                Log.d(TAG, "onFailure: " + e.getLocalizedMessage());
+            }
+
+            @Override
+            public void onResponse(Call call, Response response) throws IOException {
+                if (response.isSuccessful()) {
+                    String json = response.body().string();
+
+                    try {
+                        JSONObject jsonObject = new JSONObject(json);
+
+                        String message = jsonObject.optString("message");
+                        final int success = jsonObject.optInt("success");
+
+                        runOnUiThread(new Runnable() {
+                            @Override
+                            public void run() {
+                                if (success == 1) {
+                                    Toast.makeText(LoginActivity.this, "Login successful", Toast.LENGTH_SHORT).show();
+                                } else {
+                                    Toast.makeText(LoginActivity.this, "Login failed", Toast.LENGTH_SHORT).show();
+                                }
+                            }
+                        });
+
+                    } catch (JSONException e) {
+                        e.printStackTrace();
+                    }
+                }
+            }
+        });
+    }
+
 
     private void loginWithForm(String userName, String passWord) {
 
