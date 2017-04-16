@@ -4,8 +4,6 @@ import android.Manifest;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
 import android.os.Environment;
-import android.os.Handler;
-import android.os.Message;
 import android.support.annotation.NonNull;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
@@ -25,9 +23,12 @@ import butterknife.ButterKnife;
 import butterknife.OnClick;
 import okhttp3.Call;
 import okhttp3.Callback;
+import okhttp3.Interceptor;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.Response;
+import us.bojie.learnokhttp.okhttp.ProgressListener;
+import us.bojie.learnokhttp.okhttp.ProgressResponseBody;
 
 public class FileDownloadActivity extends AppCompatActivity {
 
@@ -53,7 +54,43 @@ public class FileDownloadActivity extends AppCompatActivity {
     }
 
     private void initOkhttp() {
-        mOkHttpClient = new OkHttpClient();
+//        mOkHttpClient = new OkHttpClient();
+        mOkHttpClient = new OkHttpClient.Builder()
+                .addNetworkInterceptor(new Interceptor() {
+                    @Override
+                    public Response intercept(Chain chain) throws IOException {
+
+                        Response response = chain.proceed(chain.request());
+
+                        return response.newBuilder()
+                                .body(new ProgressResponseBody(response.body(), new MyProgressListener()))
+                                .build();
+                    }
+                }).build();
+    }
+
+    class MyProgressListener implements ProgressListener {
+
+        @Override
+        public void onProgress(final int progress) {
+            runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    mProgressBar.setProgress(progress);
+                }
+            });
+
+        }
+
+        @Override
+        public void onDone(long totalSize) {
+            runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    Toast.makeText(FileDownloadActivity.this, "Download finished!", Toast.LENGTH_SHORT).show();
+                }
+            });
+        }
     }
 
     public static final int EXTERNAL_STORAGE_REQ_CODE = 10;
@@ -112,16 +149,16 @@ public class FileDownloadActivity extends AppCompatActivity {
         });
     }
 
-    Handler mHandler = new Handler() {
-        @Override
-        public void handleMessage(Message msg) {
-            if (msg.what == 1) {
-                int progress = msg.arg1;
-//                Log.d(TAG, "handleMessage: " + progress);
-                mProgressBar.setProgress(progress);
-            }
-        }
-    };
+//    Handler mHandler = new Handler() {
+//        @Override
+//        public void handleMessage(Message msg) {
+//            if (msg.what == 1) {
+//                int progress = msg.arg1;
+////                Log.d(TAG, "handleMessage: " + progress);
+//                mProgressBar.setProgress(progress);
+//            }
+//        }
+//    };
 
 
     private void writeFile(Response response) {
@@ -141,20 +178,20 @@ public class FileDownloadActivity extends AppCompatActivity {
             byte[] bytes = new byte[1024];
             int len;
 
-            long totalSize = response.body().contentLength();
-            long sum = 0;
+//            long totalSize = response.body().contentLength();
+//            long sum = 0;
             while ((len = is.read(bytes)) != -1) {
 
                 fos.write(bytes);
 
-                // Update progress bar using handler
-                sum += len;
-                int progress = (int) ((sum * 1.0f / totalSize) * 100);
-//                Log.d(TAG, "writeFile: " + progress);
-                Message msg = mHandler.obtainMessage(1);
-                msg.arg1 = progress;
-
-                mHandler.sendMessage(msg);
+//                // Update progress bar using handler
+//                sum += len;
+//                int progress = (int) ((sum * 1.0f / totalSize) * 100);
+////                Log.d(TAG, "writeFile: " + progress);
+//                Message msg = mHandler.obtainMessage(1);
+//                msg.arg1 = progress;
+//
+//                mHandler.sendMessage(msg);
 
             }
         } catch (IOException e) {
