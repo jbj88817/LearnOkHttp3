@@ -23,6 +23,9 @@ import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.RequestBody;
 import okhttp3.Response;
+import us.bojie.learnokhttp.model.BaseResult;
+import us.bojie.learnokhttp.okhttp.BaseCallBack;
+import us.bojie.learnokhttp.okhttp.SampleHttpClient;
 
 
 public class LoginActivity extends AppCompatActivity {
@@ -45,6 +48,50 @@ public class LoginActivity extends AppCompatActivity {
         ButterKnife.bind(this);
 
         mOkHttpClient = new OkHttpClient();
+
+//        SampleHttpClient.newBuilder().url("https://bojie.us").get().build().enqueue(new BaseCallBack<User>() {
+//            @Override
+//            public void onSuccess(User user) {
+//
+//            }
+//
+//            @Override
+//            public void onError(int code) {
+//
+//            }
+//
+//            @Override
+//            public void onFailure(IOException e) {
+//
+//            }
+//        });
+
+        String url = Config.API.BASE_URL + "login";
+
+        SampleHttpClient.newBuilder()
+                .url(url)
+                .post()
+                .addParam("username", "bojie")
+                .addParam("password", "123456")
+                .build()
+                .enqueue(new BaseCallBack<BaseResult>() {
+                    @Override
+                    public void onSuccess(BaseResult baseResult) {
+                        if (baseResult.getSuccess() == 1) {
+
+                        }
+                    }
+
+                    @Override
+                    public void onError(int code) {
+
+                    }
+
+                    @Override
+                    public void onFailure(IOException e) {
+
+                    }
+                });
     }
 
     @OnClick(R.id.btn_login)
